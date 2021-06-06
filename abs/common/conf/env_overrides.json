@@ -1,0 +1,21 @@
+{
+  "test": {
+    "DEFAULT": {
+      "abs_host": "",
+      "env": "test"
+    },
+    "LOGGER": {
+      "log_level": "INFO"
+    }
+  },
+  "dev": {
+    "DEFAULT": {
+      "cde_host": "http://localhost:8080",
+      "env": "dev"
+    },
+    "LOGGER": {
+      "log_level": "DEBUG"
+    }
+  }
+}
+
