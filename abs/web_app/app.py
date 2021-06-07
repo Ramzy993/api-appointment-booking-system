@@ -7,7 +7,7 @@ from flask import Flask
 # project imports
 from abs.common.config_manager.config_manager import ConfigManager
 from abs.common.log_manager.log_manger import LogManager
-
+from abs.db_manager.db_driver import DBDriver
 
 flask_app = Flask(import_name=__name__)
 
@@ -19,6 +19,8 @@ def creat_app():
         flask_app.config['ENV'] = ConfigManager().get_str('FLASK_APP', 'env')
 
         LogManager().info("Flask App created.")
+
+    DBDriver()
 
 
 def start_app():
