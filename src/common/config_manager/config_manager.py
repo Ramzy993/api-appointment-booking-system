@@ -5,8 +5,8 @@ import os
 from configparser import ConfigParser, ExtendedInterpolation
 
 # project imports
-from abs.common.utils.singletone import Singleton
-from abs.common import COMMON_FOLDER
+from src.common.utils.singletone import Singleton
+from src.common import COMMON_FOLDER
 
 
 CONF_FILE_NAME = "abs.conf.ini"
@@ -37,4 +37,5 @@ class ConfigManager:
         else:
             return self.__app_config.getboolean(section, key, fallback=fallback)
 
-
+    def get_section_keys(self, section):
+        return [key for key in self.__app_config.options(section) if key not in self.__app_config.defaults().keys()]

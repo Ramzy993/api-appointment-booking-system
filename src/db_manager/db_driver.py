@@ -7,15 +7,15 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 # project imports
-from abs.common.log_manager.log_manger import LogManager
-from abs.common.config_manager.config_manager import ConfigManager
-from abs.common.exception_handler.base_exception import AbsBaseException
-from abs.common.utils.singletone import Singleton
-from abs.db_manager.abstract_db_driver import base_model, AbstractDBDriver
+from src.common.log_manager.log_manger import LogManager
+from src.common.config_manager.config_manager import ConfigManager
+from src.common.exception_handler.base_exception import AbsBaseException
+from src.common.utils.singletone import Singleton
+from src.db_manager.abstract_db_driver import base_model, AbstractDBDriver
 
-from abs.db_manager.models.user import User
-from abs.db_manager.models.role import Role
-from abs.db_manager.models.appointment import Appointment
+from src.db_manager.models.user import User
+from src.db_manager.models.role import Role
+from src.db_manager.models.appointment import Appointment
 
 
 class DatabaseDriverException(AbsBaseException):
@@ -40,7 +40,7 @@ class DBDriver(AbstractDBDriver):
                 os.makedirs('tmp')
             self.connection_string = self.dialect + ":///tmp/" + self.database_name + '.db'
         else:
-            self.connection_string = self.dialect + "://" + self.username + ":" + self.password + "@" + \
+            self.connection_string = self.dialect + "+psycopg2://" + self.username + ":" + self.password + "@" + \
                                      self.host + "/" + self.database_name
 
         self.engine = create_engine(self.connection_string)
@@ -52,11 +52,34 @@ class DBDriver(AbstractDBDriver):
 
         self.session = sessionmaker(bind=self.engine)()
 
-        # self.__seed_db()
+        self.__seed_db()
 
     def __del__(self):
         self.connection.close()
-        LogManager().info("disconnected to database")
+        LogManager().info("disconnected from database")
+
+    def __seed_db(self):
+        super_user_role_id = None
+        roles = ConfigManager().get_section_keys('ROLES_PERMISSION')
+        for role in roles:
+            permissions = ConfigManager().get_str(section="ROLES_PERMISSION", key=role).split(',')
+            db_role = self.get_role(name=role)
+            if db_role is not None and role == db_role.name:
+                role_after = self.update_role(name=role, permissions={"permissions": permissions})
+            else:
+                role_after = self.create_role(name=role, permissions={"permissions": permissions})
+            if role == 'super_user':
+                super_user_role_id = role_after.id
+
+        super_user_username = ConfigManager().get_str('SUPER_USER', 'username')
+        super_user_password = ConfigManager().get_str('SUPER_USER', 'password')
+        super_user_email = ConfigManager().get_str('SUPER_USER', 'email')
+
+        user = (self.get_users(username=super_user_username) or [None])[0]
+
+        if user is None:
+            self.create_user(username=super_user_username, password=super_user_password, name=super_user_username,
+                             email=super_user_email, role_id=super_user_role_id)
 
     def __commit(self, model):
         self.session.add(model)
@@ -97,7 +120,7 @@ class DBDriver(AbstractDBDriver):
     def create_user(self, username, password, name, email, role_id):
         try:
             user = User(username, password, name, email, role_id)
-            return self.__dynamic_commit(user)
+            return self.__commit(user)
 
         except Exception as e:
             self.session.rollback()
@@ -114,7 +137,7 @@ class DBDriver(AbstractDBDriver):
             LogManager().error(f"Database Error: {e}")
             raise DatabaseDriverException(f"Database ERROR: {e}")
 
-    def update_user(self, id, username=None, password=None, name=None, email=None, email_confirmed=None, is_active=None):
+    def update_user(self, id, username=None, password=None, name=None, email=None):
         try:
             user = self.session.query(User).filter_by(id=id).first()
             user = self.__dynamic_update(User, locals())
@@ -126,7 +149,7 @@ class DBDriver(AbstractDBDriver):
             LogManager().error(f"Database Error: {e}")
             raise DatabaseDriverException(f"Database ERROR: {e}")
 
-    def update_user_role(self, id, role_id):
+    def update_user_by_admin(self, id, role_id=None, is_active=None):
         try:
             user = self.session.query(User).filter_by(id=id).first()
             user = self.__dynamic_update(user, locals())
@@ -151,7 +174,7 @@ class DBDriver(AbstractDBDriver):
     def create_role(self, name, permissions, description=None):
         try:
             role = Role( name, permissions, description)
-            return self.__dynamic_commit(role)
+            return self.__commit(role)
 
         except Exception as e:
             self.session.rollback()
@@ -160,7 +183,7 @@ class DBDriver(AbstractDBDriver):
 
     def get_role(self, name):
         try:
-            role = self.__dynamic_filter(Role, locals()).all()
+            role = self.__dynamic_filter(Role, locals()).first()
             return role
 
         except Exception as e:
@@ -180,20 +203,10 @@ class DBDriver(AbstractDBDriver):
             LogManager().error(f"Database Error: {e}")
             raise DatabaseDriverException(f"Database ERROR: {e}")
 
-    def delete_role(self, name):
-        try:
-            self.session.query(Role).filter_by(name=name).delete()
-            self.session.commit()
-
-        except Exception as e:
-            self.session.rollback()
-            LogManager().error(f"Database Error: {e}")
-            raise DatabaseDriverException(f"Database ERROR: {e}")
-
     def create_appointment(self, title, appointment_datetime, appointment_period, user_id, description=None):
         try:
             appointment = Appointment(title, appointment_datetime, appointment_period, user_id, description)
-            return self.__dynamic_commit(appointment)
+            return self.__commit(appointment)
 
         except Exception as e:
             self.session.rollback()

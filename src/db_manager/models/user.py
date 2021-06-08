@@ -7,15 +7,15 @@ from sqlalchemy.orm import relationship
 from werkzeug.security import generate_password_hash
 
 # project imports
-from abs.db_manager.abstract_db_driver import base_model
-from abs.db_manager.guid import GUID
+from src.db_manager.abstract_db_driver import base_model
+from src.db_manager.guid import GUID
 
 
 class User(base_model):
     __tablename__ = 'users'
 
     id = Column(GUID(), default=uuid.uuid4, primary_key=True)
-    username = Column(String(128), unique=True, nullable=False, primary_key=True)
+    username = Column(String(128), unique=True, nullable=False)
     password = Column(String(128), nullable=False)
     name = Column(String(128), nullable=False)
     email = Column(String(256), unique=True, nullable=False)
@@ -45,5 +45,6 @@ class User(base_model):
             'email': self.email,
             "email_confirmed": self.email_confirmed,
             "is_active": self.is_active,
-            "appointments": self.appointments
+            "appointments": self.appointments,
+            "role": self.role.name
         }

@@ -5,9 +5,9 @@
 import os
 import logging
 
-from abs.common.utils.singletone import Singleton
-from abs.common.config_manager.config_manager import ConfigManager
-from abs.common import COMMON_FOLDER
+from src.common.utils.singletone import Singleton
+from src.common.config_manager.config_manager import ConfigManager
+from src.common import COMMON_FOLDER
 
 
 @Singleton

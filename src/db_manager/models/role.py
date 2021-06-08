@@ -6,8 +6,8 @@ from sqlalchemy import Column, String, Text, JSON
 from sqlalchemy.orm import relationship
 
 # project imports
-from abs.db_manager.abstract_db_driver import base_model
-from abs.db_manager.guid import GUID
+from src.db_manager.abstract_db_driver import base_model
+from src.db_manager.guid import GUID
 
 
 class Role(base_model):
@@ -16,7 +16,7 @@ class Role(base_model):
     id = Column(GUID(), default=uuid.uuid4, primary_key=True)
     name = Column(String(128), nullable=False, unique=True)
     description = Column(Text, nullable=True)
-    permissions = Column(JSON, nullable=False)
+    permissions = Column(Text, nullable=False)
 
     def __init__(self, name, description, permissions):
         self.name = name

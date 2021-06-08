@@ -24,11 +24,11 @@ class AbstractDBDriver(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def update_user(self, id, username=None, password=None, name=None, email=None, email_confirmed=None, is_active=None):
+    def update_user(self, id, username=None, password=None, name=None, email=None):
         pass
 
     @abstractmethod
-    def update_user_role(self, id, role_id):
+    def update_user_by_admin(self, id, role_id=None, is_active=None):
         pass
 
     @abstractmethod
@@ -45,10 +45,6 @@ class AbstractDBDriver(metaclass=ABCMeta):
 
     @abstractmethod
     def update_role(self, name, permissions=None, description=None):
-        pass
-
-    @abstractmethod
-    def delete_role(self, name):
         pass
 
     @abstractmethod

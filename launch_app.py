@@ -5,8 +5,8 @@
 # project imports
 
 
-from abs.web_app.app import start_app
-from abs.common.log_manager.log_manger import LogManager
+from src.web_app.app import start_app
+from src.common.log_manager.log_manger import LogManager
 
 
 if __name__ == '__main__':

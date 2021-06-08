@@ -7,8 +7,8 @@ from sqlalchemy import Column, String, Text, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 
 # project imports
-from abs.db_manager.abstract_db_driver import base_model
-from abs.db_manager.guid import GUID
+from src.db_manager.abstract_db_driver import base_model
+from src.db_manager.guid import GUID
 
 
 class Appointment(base_model):
