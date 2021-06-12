@@ -8,6 +8,7 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 from src.common.utils.miscs import ROLES
 from src.db_manager.db_driver import DBDriver
 from src.web_app.services.standard_response import StandardResponse
+from src.common.utils.miscs import get_user_permissions
 
 
 user_blueprint = Blueprint('user_blueprint', __name__)
@@ -22,7 +23,7 @@ def get_users():
     if user is None:
         return StandardResponse('this user is not registered', 401).to_json()
 
-    if 'get_users' not in user.role.permissions["permissions"]:
+    if 'get_users' not in get_user_permissions(user):
         return StandardResponse('this user is not authorized to do this action.', 403).to_json()
 
     users = DBDriver().get_users()
@@ -38,7 +39,11 @@ def get_user(user_id):
     if user is None or not user.is_active:
         return StandardResponse('this user is not registered or not activated.', 401).to_json()
 
-    if user_id != user.id:
+    if user.role.name == ROLES.SUPER_USER.value:
+        user = (DBDriver().get_users(id=user_id) or [None])[0]
+        return StandardResponse(user, 200).to_json()
+
+    if user_id != str(user.id):
         return StandardResponse('this user is not authorized to see this data.', 403).to_json()
 
     return StandardResponse(user, 200).to_json()
@@ -52,28 +57,28 @@ def update_user(user_id):
     user = (DBDriver().get_users(username=current_username) or [None])[0]
 
     if user is None or not user.is_active:
-        return StandardResponse('this user is not registered or not activated.', 401).to_json()
+        return StandardResponse('this user is not registered or not activated.', 403).to_json()
 
-    if 'update_user' not in user.role.permissions["permissions"]:
+    if 'update_user' not in get_user_permissions(user):
         return StandardResponse('this user is not authorized to do this action.', 403).to_json()
 
-    else:
-        json_data = request.json
+    json_data = request.json
 
-        if user.role.name == ROLES.SUPER_USER.value:
-            if user_id == user.id:
-                DBDriver().update_user(id=user_id, username=json_data["username"], password=json_data["password"],
-                                       name=json_data["name"], email=json_data["email"])
-            else:
-                role_id = DBDriver().get_role(name=json_data["role"]).id
-                user = DBDriver().update_user_by_admin(id=user_id, role_id=role_id, is_active=json_data["is_active"])
-                return StandardResponse(user, 200).to_json()
-        elif user_id == user.id:
-            user = DBDriver().update_user(id=user_id, username=json_data["username"], password=json_data["password"],
-                                          e=json_data["name"], email=json_data["email"])
-            return StandardResponse(user, 200).to_json()
+    if user.role.name == ROLES.SUPER_USER.value:
+        if user_id == str(user.id):
+            DBDriver().update_user(id=user_id, username=json_data["username"], password=json_data["password"],
+                                   name=json_data["name"], email=json_data["email"])
         else:
-            return StandardResponse('this user is not authorized to update this data.', 403).to_json()
+            role_id = DBDriver().get_role(name=json_data["role"]).id
+            DBDriver().update_user_role(id=user_id, role_id=role_id)
+            user = DBDriver().update_user_activation(id=user_id, is_active=bool(json_data["is_active"]))
+            return StandardResponse(user, 200).to_json()
+    elif user_id == str(user.id):
+        user = DBDriver().update_user(id=user_id, username=json_data["username"], password=json_data["password"],
+                                      name=json_data["name"], email=json_data["email"])
+        return StandardResponse(user, 200).to_json()
+    else:
+        return StandardResponse('this user is not authorized to update this data.', 403).to_json()
 
 
 @user_blueprint.route('/users/<user_id>', methods=['DELETE'])
@@ -85,7 +90,7 @@ def delete_user(user_id):
     if user is None:
         return StandardResponse('this user is not registered', 401).to_json()
 
-    if 'delete_user' not in user.role.permissions["permissions"]:
+    if 'delete_user' not in get_user_permissions(user):
         return StandardResponse('this user is not authorized to do this action.', 403).to_json()
 
     DBDriver().delete_user(id=user_id)

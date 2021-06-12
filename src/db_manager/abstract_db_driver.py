@@ -28,7 +28,15 @@ class AbstractDBDriver(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def update_user_by_admin(self, id, role_id=None, is_active=None):
+    def update_user_role(self, id, role_id=None):
+        pass
+
+    @abstractmethod
+    def update_user_activation(self, id, is_active=None):
+        pass
+
+    @abstractmethod
+    def update_user_confirmed_email(self, id, email_confirmed=None):
         pass
 
     @abstractmethod
@@ -52,7 +60,7 @@ class AbstractDBDriver(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def get_appointments(self, title, appointment_datetime, appointment_period, user_id, description=None):
+    def get_appointments(self, id=None, title=None, appointment_datetime=None, appointment_period=None, user_id=None):
         pass
 
     @abstractmethod

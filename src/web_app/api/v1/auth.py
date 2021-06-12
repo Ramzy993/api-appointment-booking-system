@@ -3,7 +3,6 @@
 # lib imports
 from flask import Blueprint, request
 from flask_jwt_extended import create_access_token
-from flask_jwt_extended import get_jwt_identity
 from werkzeug.security import check_password_hash
 
 # project imports
@@ -28,7 +27,7 @@ def login():
     if user is None:
         return StandardResponse('this user is not registered', 401).to_json()
 
-    if  not check_password_hash(user.password, password):
+    if not check_password_hash(user.password, password):
         return StandardResponse('wrong password', 401).to_json()
 
     LogManager().info(f"this user {username} is authenticated.")
@@ -53,5 +52,6 @@ def register():
 
     role_id = DBDriver().get_role(name=ROLES.MEMBER.value).id
     user = DBDriver().create_user(username=username, password=password, name=name, email=email, role_id=role_id)
+    DBDriver().update_user_activation(id=user.id, is_active=True)
     LogManager().info(f"user created with username {username}.")
     return StandardResponse(user, 200).to_json()

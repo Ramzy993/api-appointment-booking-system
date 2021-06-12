@@ -1,4 +1,16 @@
 {
+  "prod": {
+    "DEFAULT": {
+      "abs_host": "",
+      "env": "prod"
+    },
+    "LOGGER": {
+      "log_level": "INFO"
+    },
+    "JWT": {
+      "jwt_cookie_secure": false
+    }
+  },
   "test": {
     "DEFAULT": {
       "abs_host": "",

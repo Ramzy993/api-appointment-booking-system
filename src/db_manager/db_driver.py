@@ -62,12 +62,13 @@ class DBDriver(AbstractDBDriver):
         super_user_role_id = None
         roles = ConfigManager().get_section_keys('ROLES_PERMISSION')
         for role in roles:
-            permissions = ConfigManager().get_str(section="ROLES_PERMISSION", key=role).split(',')
+            permissions = ConfigManager().get_str(section="ROLES_PERMISSION", key=role)
             db_role = self.get_role(name=role)
             if db_role is not None and role == db_role.name:
-                role_after = self.update_role(name=role, permissions={"permissions": permissions})
+                role_after = self.update_role(name=role, permissions=permissions, description=f"user can do these {permissions}")
             else:
-                role_after = self.create_role(name=role, permissions={"permissions": permissions})
+                role_after = self.create_role(name=role, permissions=permissions, description=f"user can do these {permissions}")
+
             if role == 'super_user':
                 super_user_role_id = role_after.id
 
@@ -78,8 +79,10 @@ class DBDriver(AbstractDBDriver):
         user = (self.get_users(username=super_user_username) or [None])[0]
 
         if user is None:
-            self.create_user(username=super_user_username, password=super_user_password, name=super_user_username,
-                             email=super_user_email, role_id=super_user_role_id)
+            user = self.create_user(username=super_user_username, password=super_user_password, name=super_user_username,
+                                    email=super_user_email, role_id=super_user_role_id)
+            self.update_user_activation(id=user.id, is_active=True)
+            self.update_user_confirmed_email(id=user.id, email_confirmed=True)
 
     def __commit(self, model):
         self.session.add(model)
@@ -119,7 +122,7 @@ class DBDriver(AbstractDBDriver):
     
     def create_user(self, username, password, name, email, role_id):
         try:
-            user = User(username, password, name, email, role_id)
+            user = User(username=username, password=password, name=name, email=email, role_id=role_id)
             return self.__commit(user)
 
         except Exception as e:
@@ -149,7 +152,31 @@ class DBDriver(AbstractDBDriver):
             LogManager().error(f"Database Error: {e}")
             raise DatabaseDriverException(f"Database ERROR: {e}")
 
-    def update_user_by_admin(self, id, role_id=None, is_active=None):
+    def update_user_activation(self, id, is_active=False):
+        try:
+            user = self.session.query(User).filter_by(id=id).first()
+            user.is_active = is_active
+            self.session.commit()
+            return user
+
+        except Exception as e:
+            self.session.rollback()
+            LogManager().error(f"Database Error: {e}")
+            raise DatabaseDriverException(f"Database ERROR: {e}")
+
+    def update_user_confirmed_email(self, id, email_confirmed=False):
+        try:
+            user = self.session.query(User).filter_by(id=id).first()
+            user.email_confirmed = email_confirmed
+            self.session.commit()
+            return user
+
+        except Exception as e:
+            self.session.rollback()
+            LogManager().error(f"Database Error: {e}")
+            raise DatabaseDriverException(f"Database ERROR: {e}")
+
+    def update_user_role(self, id, role_id=None):
         try:
             user = self.session.query(User).filter_by(id=id).first()
             user = self.__dynamic_update(user, locals())
@@ -205,7 +232,8 @@ class DBDriver(AbstractDBDriver):
 
     def create_appointment(self, title, appointment_datetime, appointment_period, user_id, description=None):
         try:
-            appointment = Appointment(title, appointment_datetime, appointment_period, user_id, description)
+            appointment = Appointment(title=title, appointment_datetime=appointment_datetime, appointment_period=appointment_period,
+                                      user_id=user_id, description=description)
             return self.__commit(appointment)
 
         except Exception as e:
@@ -213,7 +241,7 @@ class DBDriver(AbstractDBDriver):
             LogManager().error(f"Database Error: {e}")
             raise DatabaseDriverException(f"Database ERROR: {e}")
 
-    def get_appointments(self, title, appointment_datetime, appointment_period, user_id, description=None):
+    def get_appointments(self, id=None, title=None, appointment_datetime=None, appointment_period=None, user_id=None):
         try:
             appointments = self.__dynamic_filter(Appointment, locals()).all()
             return appointments

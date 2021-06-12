@@ -4,6 +4,7 @@
 
 import os
 import logging
+import sys
 
 from src.common.utils.singletone import Singleton
 from src.common.config_manager.config_manager import ConfigManager
@@ -25,10 +26,10 @@ class LogManager:
     logger_name = ConfigManager().get_str('LOGGER', 'logger_name', 'DEBUG')
 
     def __init__(self):
-        logging.basicConfig(filename=self.log_file_path, filemode='a', datefmt=self.log_time_format, level=self.log_level,
+        logging.basicConfig(filename=self.log_file_path, filemode='w', datefmt=self.log_time_format, level=self.log_level,
                             format=self.log_format)
         if self.log_to_console:
-            logger_handler_stream = logging.StreamHandler()
+            logger_handler_stream = logging.StreamHandler(sys.stdout)
             logger_handler_stream.setLevel(self.log_level)
             logger_handler_stream.setFormatter(fmt=logging.Formatter(self.log_format))
             logger = logging.getLogger(self.logger_name)

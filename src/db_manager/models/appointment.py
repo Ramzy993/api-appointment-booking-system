@@ -40,5 +40,8 @@ class Appointment(base_model):
     def to_json(self):
         return {
             'id': self.id,
-            'description': self.description
+            'description': self.description,
+            'appointment_datetime': self.appointment_datetime,
+            'appointment_period': self.appointment_period,
+            'user_id': self.user_id
         }
