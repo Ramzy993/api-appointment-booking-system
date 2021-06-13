@@ -3,7 +3,7 @@
 # lib imports
 import os
 from datetime import datetime
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import sessionmaker
 
 # project imports
@@ -230,10 +230,11 @@ class DBDriver(AbstractDBDriver):
             LogManager().error(f"Database Error: {e}")
             raise DatabaseDriverException(f"Database ERROR: {e}")
 
-    def create_appointment(self, title, appointment_datetime, appointment_period, user_id, description=None):
+    def create_appointment(self, title, appointment_start_datetime, appointment_end_datetime, user_id, description=None):
         try:
-            appointment = Appointment(title=title, appointment_datetime=appointment_datetime, appointment_period=appointment_period,
-                                      user_id=user_id, description=description)
+            appointment = Appointment(title=title, appointment_start_datetime=appointment_start_datetime,
+                                      appointment_end_datetime=appointment_end_datetime, user_id=user_id,
+                                      description=description)
             return self.__commit(appointment)
 
         except Exception as e:
@@ -241,9 +242,17 @@ class DBDriver(AbstractDBDriver):
             LogManager().error(f"Database Error: {e}")
             raise DatabaseDriverException(f"Database ERROR: {e}")
 
-    def get_appointments(self, id=None, title=None, appointment_datetime=None, appointment_period=None, user_id=None):
+    def get_appointments(self, id=None, title=None, appointment_start_datetime=None, appointment_end_datetime=None, user_id=None):
         try:
-            appointments = self.__dynamic_filter(Appointment, locals()).all()
+            appointments = self.__dynamic_filter(Appointment, locals())
+
+            if appointment_start_datetime is not None and appointment_end_datetime is not None:
+                appointments = appointments.filter(Appointment.appointment_start_datetime.
+                                                   between(appointment_start_datetime, appointment_end_datetime)).\
+                                                   order_by(desc(Appointment.appointment_start_datetime)).all()
+            else:
+                appointments = appointments.order_by(desc(Appointment.appointment_start_datetime)).all()
+
             return appointments
 
         except Exception as e:
@@ -251,10 +260,11 @@ class DBDriver(AbstractDBDriver):
             LogManager().error(f"Database Error: {e}")
             raise DatabaseDriverException(f"Database ERROR: {e}")
 
-    def update_appointment(self, id, title=None, appointment_datetime=None, appointment_period=None, description=None):
+    def update_appointment(self, id, title=None, appointment_start_datetime=None, appointment_end_datetime=None, description=None):
         try:
             appointment = self.session.query(Appointment).filter_by(id=id).first()
             appointment = self.__dynamic_update(appointment, locals())
+            appointment.updated_at = datetime.now()
             self.session.commit()
             return appointment
 

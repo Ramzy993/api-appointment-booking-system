@@ -17,19 +17,19 @@ class Appointment(base_model):
     id = Column(GUID(), default=uuid.uuid4, primary_key=True)
     title = Column(String(256), nullable=False)
     description = Column(Text, nullable=True)
-    appointment_datetime = Column(DateTime, nullable=False)
-    appointment_period = Column(String(32), nullable=False)
+    appointment_start_datetime = Column(DateTime, nullable=False)
+    appointment_end_datetime = Column(DateTime, nullable=False)
 
     created_at = Column(DateTime, nullable=False)
     updated_at = Column(DateTime, nullable=False)
 
     user_id = Column(GUID, ForeignKey('users.id'), nullable=False)
 
-    def __init__(self, title, description, appointment_datetime, appointment_period, user_id):
+    def __init__(self, title, description, appointment_start_datetime, appointment_end_datetime, user_id):
         self.title = title
         self.description = description
-        self.appointment_datetime = appointment_datetime
-        self.appointment_period = appointment_period
+        self.appointment_start_datetime = appointment_start_datetime
+        self.appointment_end_datetime = appointment_end_datetime
         self.created_at = datetime.now()
         self.updated_at = datetime.now()
         self.user_id = user_id
@@ -41,7 +41,7 @@ class Appointment(base_model):
         return {
             'id': self.id,
             'description': self.description,
-            'appointment_datetime': self.appointment_datetime,
-            'appointment_period': self.appointment_period,
+            'appointment_start_datetime': self.appointment_start_datetime,
+            'appointment_end_datetime': self.appointment_end_datetime,
             'user_id': self.user_id
         }

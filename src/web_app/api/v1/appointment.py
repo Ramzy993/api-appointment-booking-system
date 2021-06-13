@@ -5,6 +5,7 @@ from flask import Blueprint, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
 # project imports
+from src.appointmnet_manager.appoitment_handler import AppointmentHandler
 from src.common.utils.miscs import get_user_permissions
 from src.db_manager.db_driver import DBDriver
 from src.web_app.services.standard_response import StandardResponse
@@ -66,10 +67,20 @@ def create_appointment():
     else:
         title = request.json.get("title", None)
         description = request.json.get("description", None)
-        appointment_datetime = request.json.get("appointment_datetime", None)
-        appointment_period = request.json.get("appointment_period", None)
-        appointment = DBDriver().create_appointment(title=title, description=description, appointment_datetime=appointment_datetime,
-                                                    appointment_period=appointment_period, user_id=user.id)
+        appointment_start_datetime = request.json.get("appointment_start_datetime", None)
+        appointment_end_datetime = request.json.get("appointment_end_datetime", None)
+
+        if None in [title, appointment_start_datetime, appointment_end_datetime]:
+            return StandardResponse("Bad Request: these data [title, appointment_start_datetime, "
+                                    "appointment_end_datetime] must be present in request json ", 406).to_json()
+
+        appointment_valid, validation_messages = AppointmentHandler().appointment_checker(appointment_start_datetime,
+                                                                                          appointment_end_datetime)
+        if not appointment_valid:
+            return StandardResponse({"validation_messages": validation_messages}, 406).to_json()
+
+        appointment = DBDriver().create_appointment(title=title, description=description, appointment_start_datetime=appointment_start_datetime,
+                                                    appointment_end_datetime=appointment_end_datetime, user_id=user.id)
         return StandardResponse(appointment, 200).to_json()
 
 

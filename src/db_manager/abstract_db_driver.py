@@ -56,15 +56,15 @@ class AbstractDBDriver(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def create_appointment(self, title, appointment_datetime, appointment_period, user_id, description=None):
+    def create_appointment(self, title, appointment_start_datetime, appointment_end_datetime, user_id, description=None):
         pass
 
     @abstractmethod
-    def get_appointments(self, id=None, title=None, appointment_datetime=None, appointment_period=None, user_id=None):
+    def get_appointments(self, id=None, title=None, appointment_start_datetime=None, appointment_end_datetime=None, user_id=None):
         pass
 
     @abstractmethod
-    def update_appointment(self, id, title=None, appointment_datetime=None, appointment_period=None, description=None):
+    def update_appointment(self, id, title=None, appointment_start_datetime=None, appointment_end_datetime=None, description=None):
         pass
 
     @abstractmethod
